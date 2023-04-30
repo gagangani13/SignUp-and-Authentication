@@ -1,12 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useContext } from "react";
+import UserContext from "../Context/UserContext";
 
 import classes from "./AuthForm.module.css";
 
 const AuthForm = () => {
+
+  const ctx=useContext(UserContext)
   const emailRef = useRef();
   const passwordRef = useRef();
   const [isLogin, setIsLogin] = useState(true);
-  const[message,setMessage]=useState(false)
+  const [message, setMessage] = useState(false);
 
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
@@ -14,40 +17,43 @@ const AuthForm = () => {
 
   async function fetchServer(e) {
     e.preventDefault();
-    setMessage(true)
-    const Email=emailRef.current.value
-    const Password=passwordRef.current.value
-    if(isLogin){
-      console.log('login')
-    }else{
-      const response = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBXPzqlI6fvUIQX7LiIqUK-vdC_dfWQ0q8',
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: Email,
-            password: Password,
-            returnSecureToken: true,
-          }),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
-      try {
-        setMessage(false)
-        if(response.ok){
-          console.log(response.json())
-        }else{
-          throw new Error('EMAIL EXISTS')
-        }
-      } catch (error) {
-        const data=await response.json()
-        let msg='ERROR'
-        console.log(data)
-        if(data&&data.error&&data.error.message)
-          msg=data.error.message
-          alert(msg)
+    setMessage(true);
+    const Email = emailRef.current.value;
+    const Password = passwordRef.current.value;
+    let url;
+    if (isLogin) {
+       url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBXPzqlI6fvUIQX7LiIqUK-vdC_dfWQ0q8";
+    } else {
+       url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBXPzqlI6fvUIQX7LiIqUK-vdC_dfWQ0q8";
+    }
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify({
+        email: Email,
+        password: Password,
+        returnSecureToken: true,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+    try {
+      setMessage(false);
+      if (response.ok) {
+        // const ID= await data.idToken
+        // ctx.idfunction(ID)
+        ctx.loginPageFunction(true)
+      } else {
+        throw new Error("Error");
       }
+    } catch (error) {
+      let msg = "ERROR";
+      console.log(data);
+      if (data && data.error && data.error.message) msg = data.error.message;
+      alert(msg);
     }
   }
 
@@ -60,15 +66,13 @@ const AuthForm = () => {
           <input type="email" id="email" ref={emailRef} required />
         </div>
         <div className={classes.control}>
-          <label htmlFor="password" >
-            Your Password
-          </label>
-          <input type="password" id="password" required ref={passwordRef}/>
+          <label htmlFor="password">Your Password</label>
+          <input type="password" id="password" required ref={passwordRef} />
         </div>
-        {!message && <button type="submit" >
-          {isLogin ? "LOGIN" : "CREATE ACCOUNT"}
-        </button>}
-        {message && 'Sending request...'}
+        {!message && (
+          <button type="submit">{isLogin ? "LOGIN" : "CREATE ACCOUNT"}</button>
+        )}
+        {message && "Sending request..."}
         <div className={classes.actions}>
           <button
             type="button"
